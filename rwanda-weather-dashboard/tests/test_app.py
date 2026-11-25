@@ -47,4 +47,4 @@ def test_search_returns_location(monkeypatch):
     response = client.get("/api/search?city=Kigali")
 
     assert response.status_code == 200
-    assert response.get_json()["results"][0]["name"] == "kigali"
+    assert response.get_json()["results"][0]["name"] == "Kigali"
