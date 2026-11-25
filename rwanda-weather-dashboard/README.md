@@ -16,19 +16,21 @@ A responsive weather dashboard built with Flask, HTML, CSS and JavaScript. Skyli
 
 ## 2. Technology Stack
 
-Backend |- Python and Flask 
-Frontend |- HTML, CSS and JavaScript 
-External APIs |- Open-Meteo 
-Application server |- Gunicorn 
-Load balancer |- Nginx 
-Operating system |- Ubuntu 20.04.6 LTS 
-Python deployment version |- 3.12.16 
-Process management |- systemd 
-Infrastructure |- Three Ubuntu servers on AWS 
+| Component | Technology |
+|---|---|
+| Backend | Python and Flask |
+| Frontend | HTML, CSS and JavaScript |
+| External APIs | Open-Meteo |
+| Application server | Gunicorn |
+| Load balancer | Nginx |
+| Operating system | Ubuntu 20.04.6 LTS |
+| Python deployment version | 3.12.16 |
+| Process management | systemd |
+| Infrastructure | Three Ubuntu servers on AWS |
 
 ## 3. Project Structure
 
-
+```text
 rwanda-weather-dashboard/
 ├── app.py
 ├── requirements.txt
@@ -44,22 +46,20 @@ rwanda-weather-dashboard/
     └── test_app.py
 ```
 
-## 4. Runing Locally
+## 4. Run Locally
 
 Requirements:
-it requires
 - Python 3.10 or newer
 - pip
 
 On Windows PowerShell:
 
-
+```powershell
 py -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 python app.py
 ```
-Then,
 
 Open:
 
@@ -67,7 +67,7 @@ http://127.0.0.1:5000
 
 If PowerShell blocks virtual-environment activation:
 
-
+```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .venv\Scripts\Activate.ps1
 ```
@@ -76,11 +76,11 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 Run the test suite:
 
-
+```bash
 python -m pytest -v
 ```
 
-The five tests covers:
+The five tests cover:
 
 1. Home page availability.
 2. Health endpoint response.
@@ -90,7 +90,7 @@ The five tests covers:
 
 **Verified result: 5 passed, 0 failed.**
 
-I have also executed these tests successfully on both Web01 and Web02.
+The tests were also executed successfully on both Web01 and Web02.
 
 ## 6. External API Integration
 
@@ -109,7 +109,7 @@ Review Open-Meteo's current terms and attribution requirements before public dep
 
 Skyline is deployed across three Ubuntu application infrastructure servers.
 
-
+```text
                  Internet Users
                        |
                        |
@@ -137,10 +137,11 @@ Skyline is deployed across three Ubuntu application infrastructure servers.
 
 ### Server information
 
-
-Web01 |- Flask application server |- 10.30.20.91(private) |- 35.177.172.36
-Web02 |- Flask application server |- 10.30.21.71(private) |- 35.176.25.102
-Lb01 |- Nginx load balancer |- 10.30.27.228(private) |- 3.8.134.96
+| Server | Role | Private IP | Public IP |
+|---|---|---|---|
+| Web01 | Flask application server | 10.30.20.91 | 35.177.172.36 |
+| Web02 | Flask application server | 10.30.21.71 | 35.176.25.102 |
+| Lb01 | Nginx load balancer | 10.30.27.228 | 3.8.134.96 |
 
 ### Application server configuration
 
@@ -161,13 +162,13 @@ Each application server runs the Flask application through Gunicorn.
 
 The Web01 service uses:
 
-
+```bash
 SERVER_NAME=Web01
 ```
 
 The Web02 service uses:
 
-
+```bash
 SERVER_NAME=Web02
 ```
 
@@ -175,19 +176,19 @@ Both services bind to their respective private IP addresses on port 5000.
 
 Web01:
 
-
+```text
 10.30.20.91:5000
 ```
 
 Web02:
 
-
+```text
 10.30.21.71:5000
 ```
 
 The services are managed using:
 
-
+```bash
 sudo systemctl status skyline
 sudo systemctl restart skyline
 sudo systemctl start skyline
@@ -202,7 +203,7 @@ Nginx runs on Lb01 and distributes HTTP requests between Web01 and Web02.
 
 The configured upstream is:
 
-
+```nginx
 upstream skyline_backend {
     server 10.30.20.91:5000;
     server 10.30.21.71:5000;
@@ -211,7 +212,7 @@ upstream skyline_backend {
 
 The Nginx server block forwards requests to the upstream:
 
-
+```nginx
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
@@ -237,7 +238,7 @@ Nginx uses round-robin distribution by default.
 
 To validate and reload the configuration:
 
-
+```bash
 sudo nginx -t
 sudo systemctl reload nginx
 ```
@@ -260,7 +261,7 @@ Both application servers returned successful health responses.
 
 Web01:
 
-
+```json
 {
   "server": "Web01",
   "service": "rwanda-weather-dashboard",
@@ -270,7 +271,7 @@ Web01:
 
 Web02:
 
-
+```json
 {
   "server": "Web02",
   "service": "rwanda-weather-dashboard",
@@ -284,7 +285,7 @@ Six consecutive requests were sent through Nginx.
 
 Observed responses:
 
-
+```text
 Web01
 Web02
 Web01
@@ -328,18 +329,14 @@ The public `/health` endpoint also returned a successful response.
 
 ## 11. Challenges and Solutions
 
-
-Ubuntu servers initially provided Python 3.8 |- Installed Python 3.12 using uv without replacing system Python
-
-Git was unavailable on Web02 |- Installed Git using apt
-
-SSH authentication initially failed |- Identified and used the RSA school key registered in the ALU Intranet
-
-Gunicorn initially listened on localhost |- Configured Gunicorn to bind to each application's private IP
-
-Nginx initially served only its default page |- Configured a reverse proxy and upstream backend group
-
-One application server became unavailable |- Verified continued service through the remaining backend
+| Challenge | Solution |
+|---|---|
+| Ubuntu servers initially provided Python 3.8 | Installed Python 3.12 using uv without replacing system Python |
+| Git was unavailable on Web02 | Installed Git using apt |
+| SSH authentication initially failed | Identified and used the RSA school key registered in the ALU Intranet |
+| Gunicorn initially listened on localhost | Configured Gunicorn to bind to each application's private IP |
+| Nginx initially served only its default page | Configured a reverse proxy and upstream backend group |
+| One application server became unavailable | Verified continued service through the remaining backend |
 
 ## 12. Final Project Status
 
