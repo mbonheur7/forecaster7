@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A practical weather dashboard powered by Open-Meteo.">
+  <title>Skyline | Weather Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Skyline home"><span class="brand-mark">✦</span> SKYLINE</a>
+      <span class="live-label"><span class="pulse"></span> LIVE WEATHER</span>
+    </header>
+
+    <section class="intro">
+      <p class="eyebrow">WEATHER, WITHOUT THE GUESSWORK</p>
+      <h1>Find your <span>clear skies.</span></h1>
+      <p class="subhead">Search a city to see current conditions and the week ahead.</p>
+    </section>
+
+    <section class="search-panel" aria-label="Location search">
+      <form id="search-form">
+        <label class="sr-only" for="city-input">City or location</label>
+        <span class="search-icon">⌕</span>
+        <input id="city-input" type="text" placeholder="Search a city, e.g. Kigali" minlength="2" maxlength="80" required>
+        <button id="search-button" type="submit">Search <span>→</span></button>
+      </form>
+      <div id="search-results" class="search-results" hidden></div>
+      <p id="message" class="message" role="status">Try Kigali, Nairobi, London or any city worldwide.</p>
+    </section>
+
+    <section id="weather-section" class="weather-section" hidden>
+      <div class="location-heading">
+        <div>
+          <p class="eyebrow">YOUR LOCATION</p>
+          <h2 id="location-name">Kigali</h2>
+          <p id="location-meta" class="muted"></p>
+        </div>
+        <label class="unit-control">Temperature
+          <select id="unit-select" aria-label="Temperature unit">
+            <option value="celsius">°C</option>
+            <option value="fahrenheit">°F</option>
+          </select>
+        </label>
+      </div>
+
+      <article class="current-card">
+        <div>
+          <p class="eyebrow">CURRENT CONDITIONS</p>
+          <div class="current-temp"><span id="current-temp">--</span><sup id="current-unit">°C</sup></div>
+          <h3 id="current-description">Loading conditions…</h3>
+          <p id="feels-like" class="muted"></p>
+        </div>
+        <div class="current-icon" id="current-icon" aria-hidden="true">☀</div>
+        <div class="current-stats">
+          <div><span>Humidity</span><strong id="humidity">--</strong></div>
+          <div><span>Wind</span><strong id="wind">--</strong></div>
+          <div><span>Rain</span><strong id="rain">--</strong></div>
+        </div>
+      </article>
+
+      <div class="forecast-heading">
+        <div><p class="eyebrow">PLAN AHEAD</p><h2>7-day forecast</h2></div>
+        <div class="forecast-tools">
+          <label>Filter
+            <select id="condition-filter">
+              <option value="all">All conditions</option>
+              <option value="sun">Sunny / clear</option>
+              <option value="cloud">Cloudy</option>
+              <option value="rain">Rain / showers</option>
+              <option value="snow">Snow</option>
+              <option value="storm">Thunderstorm</option>
+            </select>
+          </label>
+          <label>Sort
+            <select id="sort-select">
+              <option value="date">Date</option>
+              <option value="warmest">Warmest first</option>
+              <option value="coldest">Coldest first</option>
+              <option value="rain">Highest rain chance</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div id="forecast-grid" class="forecast-grid"></div>
+      <p class="attribution">Weather data provided by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>.</p>
+    </section>
+
+    <footer><span>SKYLINE WEATHER</span><span>Useful forecasts. Better decisions.</span></footer>
+  </main>
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>
