@@ -1,106 +1,354 @@
 # Skyline Weather Dashboard
 
-A responsive weather dashboard built with Flask, HTML, CSS and JavaScript. It uses the Open-Meteo Geocoding and Forecast APIs to search locations and display current conditions and a seven-day forecast.
+A responsive weather dashboard built with Flask, HTML, CSS and JavaScript. Skyline uses the Open-Meteo Geocoding and Forecast APIs to search for locations and display current weather conditions and a seven-day forecast.
 
-## Features
+## 1. Features
 
-- Search for cities and choose the matching location.
+- Search for cities and select matching locations.
 - Display current temperature, feels-like temperature, humidity, wind and precipitation.
 - Display a seven-day forecast.
 - Filter forecast days by weather condition.
 - Sort by date, warmest day, coldest day or highest precipitation probability.
 - Switch between Celsius and Fahrenheit.
-- Handle invalid input and upstream API errors.
-- Cache successful external API responses in memory for five minutes.
+- Handle invalid input and external API errors.
+- Cache successful external API responses for five minutes.
 - Health endpoint at `/health` for deployment checks.
 
-## Requirements
+## 2. Technology Stack
 
+Backend |- Python and Flask 
+Frontend |- HTML, CSS and JavaScript 
+External APIs |- Open-Meteo 
+Application server |- Gunicorn 
+Load balancer |- Nginx 
+Operating system |- Ubuntu 20.04.6 LTS 
+Python deployment version |- 3.12.16 
+Process management |- systemd 
+Infrastructure |- Three Ubuntu servers on AWS 
+
+## 3. Project Structure
+
+
+rwanda-weather-dashboard/
+├── app.py
+├── requirements.txt
+├── .env.example
+├── .gitignore
+├── README.md
+├── static/
+│   ├── app.js
+│   └── style.css
+├── templates/
+│   └── index.html
+└── tests/
+    └── test_app.py
+```
+
+## 4. Runing Locally
+
+Requirements:
+it requires
 - Python 3.10 or newer
 - pip
 
-## Run locally on Windows
+On Windows PowerShell:
 
-Open PowerShell in this project directory:
 
-```powershell
 py -m venv .venv
-.venv\\Scripts\\Activate.ps1
+.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 python app.py
 ```
+Then,
 
-Open http://127.0.0.1:5000 in your browser.
+Open:
 
-If PowerShell blocks activation, use:
+http://127.0.0.1:5000
 
-```powershell
+If PowerShell blocks virtual-environment activation:
+
+
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.venv\\Scripts\\Activate.ps1
+.venv\Scripts\Activate.ps1
 ```
 
-## Tests
+## 5. Automated Testing
 
-```powershell
-pytest
+Run the test suite:
+
+
+python -m pytest -v
 ```
 
-## API credits
+The five tests covers:
 
-This project uses Open-Meteo:
+1. Home page availability.
+2. Health endpoint response.
+3. Rejection of short city names.
+4. Rejection of invalid weather coordinates.
+5. Successful location search using a mocked API response.
+
+**Verified result: 5 passed, 0 failed.**
+
+I have also executed these tests successfully on both Web01 and Web02.
+
+## 6. External API Integration
+
+Skyline uses two Open-Meteo services:
+
 - Geocoding API: https://open-meteo.com/en/docs/geocoding-api
 - Forecast API: https://open-meteo.com/en/docs
 
+The geocoding API provides location search results. The forecast API provides current weather conditions and daily forecast data.
+
+The application caches successful external API responses in memory for five minutes.
+
 Review Open-Meteo's current terms and attribution requirements before public deployment.
 
-## Deployment notes
+## 7. Deployment Architecture
 
-The intended topology is one Nginx load balancer (Lb01) forwarding requests to two application servers (Web01 and Web02). Run the Flask application behind Gunicorn on each application server. Set `SERVER_NAME=Web01` on the first server and `SERVER_NAME=Web02` on the second server so the `/health` response can identify which server answered.
+Skyline is deployed across three Ubuntu application infrastructure servers.
 
-Example application process on each Linux web server:
 
-```bash
-python3 -m venv .venv
-. .venv/bin/activate
-pip install -r requirements.txt
-SERVER_NAME=Web01 gunicorn --workers 2 --bind 0.0.0.0:5000 app:app
+                 Internet Users
+                       |
+                       |
+                Public HTTP :80
+                       |
+                       v
+               Lb01 - Nginx
+              10.30.27.228
+              Public IP: 3.8.134.96
+                       |
+               Round-robin routing
+                   /       \
+                  /         \
+                 v           v
+             Web01          Web02
+          10.30.20.91    10.30.21.71
+             :5000          :5000
+                |             |
+                v             v
+             Gunicorn      Gunicorn
+                |             |
+                v             v
+             Flask         Flask
 ```
 
-Change `SERVER_NAME` to `Web02` on the second server. Configure the service to run under systemd in production.
+### Server information
 
-Example Nginx load-balancer upstream (replace the example addresses with the actual private IP addresses supplied for your servers):
 
-```nginx
+Web01 |- Flask application server |- 10.30.20.91(private) |- 35.177.172.36
+Web02 |- Flask application server |- 10.30.21.71(private) |- 35.176.25.102
+Lb01 |- Nginx load balancer |- 10.30.27.228(private) |- 3.8.134.96
+
+### Application server configuration
+
+Both application servers use:
+
+- Ubuntu 20.04.6 LTS.
+- ARM64 architecture.
+- Python 3.12.16 installed using uv.
+- A dedicated Python virtual environment.
+- Gunicorn with two workers.
+- systemd for automatic service management.
+
+The system Python installation was left unchanged.
+
+### Gunicorn and systemd
+
+Each application server runs the Flask application through Gunicorn.
+
+The Web01 service uses:
+
+
+SERVER_NAME=Web01
+```
+
+The Web02 service uses:
+
+
+SERVER_NAME=Web02
+```
+
+Both services bind to their respective private IP addresses on port 5000.
+
+Web01:
+
+
+10.30.20.91:5000
+```
+
+Web02:
+
+
+10.30.21.71:5000
+```
+
+The services are managed using:
+
+
+sudo systemctl status skyline
+sudo systemctl restart skyline
+sudo systemctl start skyline
+sudo systemctl stop skyline
+```
+
+The systemd service is enabled to start automatically after server reboots.
+
+## 8. Nginx Load Balancer Configuration
+
+Nginx runs on Lb01 and distributes HTTP requests between Web01 and Web02.
+
+The configured upstream is:
+
+
 upstream skyline_backend {
-    server WEB01_PRIVATE_IP:5000;
-    server WEB02_PRIVATE_IP:5000;
+    server 10.30.20.91:5000;
+    server 10.30.21.71:5000;
 }
+```
+
+The Nginx server block forwards requests to the upstream:
+
 
 server {
-    listen 80;
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
     server_name _;
 
     location / {
         proxy_pass http://skyline_backend;
+        proxy_http_version 1.1;
+
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 30s;
     }
 }
 ```
 
-Do not copy the placeholder IP addresses literally. Use the actual server addresses and the deployment requirements provided by your instructor. Restrict port 5000 with the server firewall so only Lb01 (and authorized administration sources) can reach it. Do not expose the Gunicorn port publicly.
+Nginx uses round-robin distribution by default.
 
-## Verification checklist
+To validate and reload the configuration:
 
-- Open the app locally and search for Kigali.
-- Try a city that does not exist and confirm a useful error appears.
-- Test the temperature unit selector, forecast filter and sort controls.
-- Check `/health` on each application server.
-- Access the app through the load balancer.
-- Refresh or make repeated requests and inspect server logs or `/health` responses to verify both backends receive traffic.
-- Stop one backend temporarily (only if permitted) and confirm the load balancer continues serving through the remaining backend.
 
-## Important
+sudo nginx -t
+sudo systemctl reload nginx
+```
 
-Complete the deployment section with the actual server IPs, commands, service configuration, tests, screenshots and challenges from your own deployment. Do not claim a step succeeded unless you performed and verified it.
+## 9. Deployment Verification
+
+The following checks were performed during deployment.
+
+### Local application verification
+
+- Successfully launched the Flask application locally.
+- Verified the `/health` endpoint.
+- Successfully searched for Kigali using the live Open-Meteo Geocoding API.
+- Successfully retrieved a live seven-day weather forecast.
+- Verified search, temperature conversion, filtering and sorting through the browser.
+
+### Application server verification
+
+Both application servers returned successful health responses.
+
+Web01:
+
+
+{
+  "server": "Web01",
+  "service": "rwanda-weather-dashboard",
+  "status": "ok"
+}
+```
+
+Web02:
+
+
+{
+  "server": "Web02",
+  "service": "rwanda-weather-dashboard",
+  "status": "ok"
+}
+```
+
+### Load balancing verification
+
+Six consecutive requests were sent through Nginx.
+
+Observed responses:
+
+
+Web01
+Web02
+Web01
+Web02
+Web01
+Web02
+```
+
+This verified that requests were distributed between both application servers.
+
+### Failover verification
+
+Web01 was temporarily stopped while Web02 remained operational.
+
+Six requests were sent through Lb01.
+
+Results:
+
+- Six successful HTTP responses.
+- All six requests were handled by Web02.
+- No failed responses were observed.
+
+Web01 was subsequently restarted. Both application servers resumed serving requests through Nginx.
+
+### Public access verification
+
+The application was successfully accessed through:
+
+http://3.8.134.96
+
+The public `/health` endpoint also returned a successful response.
+
+## 10. Important Deployment Considerations
+
+- The Gunicorn services must remain accessible to Lb01 through the private network.
+- Backend port 5000 should only be accessible from authorized internal sources, particularly Lb01.
+- Public HTTP access should be directed through Lb01.
+- SSH access should use authorized public-key authentication.
+- Do not commit private SSH keys, AWS credentials, passwords or environment secrets to GitHub.
+- Configure HTTPS and a domain name if required for a public production deployment.
+
+## 11. Challenges and Solutions
+
+
+Ubuntu servers initially provided Python 3.8 |- Installed Python 3.12 using uv without replacing system Python
+
+Git was unavailable on Web02 |- Installed Git using apt
+
+SSH authentication initially failed |- Identified and used the RSA school key registered in the ALU Intranet
+
+Gunicorn initially listened on localhost |- Configured Gunicorn to bind to each application's private IP
+
+Nginx initially served only its default page |- Configured a reverse proxy and upstream backend group
+
+One application server became unavailable |- Verified continued service through the remaining backend
+
+## 12. Final Project Status
+
+The Skyline Weather Dashboard has been deployed across two Flask application servers behind an Nginx load balancer.
+
+The application, backend communication, request distribution, public access and tested failover behaviour were verified.
+
+**Project repository:** https://github.com/mbonheur7/forecaster7
+
+**Public application:** http://3.8.134.96
+
+**Deployment architecture:** One Nginx load balancer and two Flask application servers.
