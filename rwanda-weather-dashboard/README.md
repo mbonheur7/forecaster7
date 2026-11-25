@@ -348,4 +348,6 @@ The application, backend communication, request distribution, public access and 
 
 **Public application:** http://3.8.134.96
 
+**Demo video:** https://youtu.be/B5c2PWud18M
+
 **Deployment architecture:** One Nginx load balancer and two Flask application servers.
